@@ -5,14 +5,14 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Data
 @Entity
-@Table(name = "Products")
+@Table(name = "products")
+@Data
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idProduct;
+    private Long id;
 
     private String name;
     private String description;
@@ -22,8 +22,8 @@ public class Product {
     private double sale_price;
     private double buy_price;
     private int stock_minimo;
-    private Long status;
 
-
-
+    @ManyToOne
+    @JoinColumn(name = "status_id")
+    private Status status;
 }

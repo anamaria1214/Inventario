@@ -5,9 +5,9 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Data
 @Entity
-@Table(name = "Movements")
+@Table(name = "movements")
+@Data
 public class Movement {
 
     @Id
@@ -15,7 +15,14 @@ public class Movement {
     private Long id;
 
     private LocalDateTime date_move;
-    private Long product;
-    private Long typeMove;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "type_move_id")
+    private TypeMove typeMove;
+
     private double amount;
 }
