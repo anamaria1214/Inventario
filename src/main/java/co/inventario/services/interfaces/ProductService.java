@@ -12,7 +12,7 @@ public interface ProductService {
 
     Product newProduct(NewProductDTO newProductDTO) throws ProductException;
 
-    Product updateProduct(long idProduct, UpdateProductDTO updateProductDTO) throws ProductException;
+    Product updateProduct(UpdateProductDTO updateProductDTO) throws ProductException;
 
     Product deleteProduct(long idProduct) throws ProductException;
 

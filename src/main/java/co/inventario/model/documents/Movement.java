@@ -31,4 +31,7 @@ public class Movement {
     private TypeMove typeMove;
 
     private double amount;
+
+
+
 }

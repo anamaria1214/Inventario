@@ -29,14 +29,14 @@ public class MovementeServiceImplementation implements MovementService {
      * Creates a new movement for a given product by updating its stock and saving the movement in the repository.
      * The movement type can be either "IN" (to add stock) or "OUT" (to remove stock).
      *
-     * @param newMovementDTO the data transfer object containing the product ID and the amount for the movement
-     * @param moveType the type of the movement, either "IN" or "OUT"
+     * @param newMovementDTO the data transfer object containing the product ID and the amount for the movement,
+     *                       the type of the movement, either "IN" or "OUT"
      * @return the saved Movement entity after processing the request
      * @throws MovementException if the product does not exist, the amount is invalid, the movement type is invalid,
      *                           or there is insufficient stock for an "OUT" movement
      */
     @Override
-    public Movement newMovement(NewMovementDTO newMovementDTO,String moveType) throws MovementException {
+    public Movement newMovement(NewMovementDTO newMovementDTO) throws MovementException {
         // Validación del producto
         Product product = productRepository.findById(newMovementDTO.productId())
                 .orElseThrow(() -> new MovementException("El producto no existe. ID=" + newMovementDTO.productId()));
@@ -47,13 +47,13 @@ public class MovementeServiceImplementation implements MovementService {
         }
 
         // Obtener el tipo de movimiento (IN / OUT)
-        TypeMove typeMove = typeMoveRepository.findByMove(moveType.toUpperCase())
-                .orElseThrow(() -> new MovementException("Tipo de movimiento inválido: " + moveType));
+        TypeMove typeMove = typeMoveRepository.findByMove(newMovementDTO.moveType().toUpperCase())
+                .orElseThrow(() -> new MovementException("Tipo de movimiento inválido: " + newMovementDTO.moveType()));
 
         // Actualizar stock según IN / OUT
-        if (moveType.equalsIgnoreCase("IN")) {
+        if (newMovementDTO.moveType().equalsIgnoreCase("IN")) {
             product.setStock(product.getStock() + (int) newMovementDTO.amount());
-        } else if (moveType.equalsIgnoreCase("OUT")) {
+        } else if (newMovementDTO.moveType().equalsIgnoreCase("OUT")) {
             if (product.getStock() < newMovementDTO.amount()) {
                 throw new MovementException("Stock insuficiente para realizar una salida.");
             }

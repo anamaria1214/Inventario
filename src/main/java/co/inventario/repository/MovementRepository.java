@@ -8,8 +8,4 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 @Repository
 public interface MovementRepository extends JpaRepository<Movement, Long> {
-
-    @Query
-    Status findByStatus(String status);
-
 }

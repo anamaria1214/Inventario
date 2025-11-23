@@ -74,7 +74,6 @@ public class ProductServiceImplementation implements ProductService {
      * Retrieves the product by its ID, updates its attributes, and persists the changes
      * to the repository.
      *
-     * @param idProduct         the unique identifier of the product to be updated
      * @param updateProductDTO  the data transfer object containing the new product details,
      *                          including name, description, sale price, buy price, and
      *                          minimum stock
@@ -82,8 +81,8 @@ public class ProductServiceImplementation implements ProductService {
      * @throws ProductException if the product with the specified ID is not found
      */
     @Override
-    public Product updateProduct(long idProduct, UpdateProductDTO updateProductDTO) throws ProductException {
-        Product updateProduct= getProductById(idProduct);
+    public Product updateProduct(UpdateProductDTO updateProductDTO) throws ProductException {
+        Product updateProduct= getProductById(updateProductDTO.idProduct());
         updateProduct.setName(updateProductDTO.newName());
         updateProduct.setDescription(updateProductDTO.newDescription());
         updateProduct.setSale_price(updateProductDTO.newSalePrice());
