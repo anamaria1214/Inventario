@@ -6,6 +6,6 @@ import co.inventario.model.documents.Movement;
 
 public interface MovementService {
 
-    Movement newMovement(NewMovementDTO newMovementDTO) throws MovementException;
+    Movement newMovement(NewMovementDTO newMovementDTO, String moveType) throws MovementException;
 
 }
