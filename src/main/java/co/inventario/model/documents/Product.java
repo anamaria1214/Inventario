@@ -1,18 +1,24 @@
 package co.inventario.model.documents;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Data
 @Entity
-@Table(name = "Products")
+@Table(name = "products")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idProduct;
+    private Long id;
 
     private String name;
     private String description;
@@ -22,8 +28,10 @@ public class Product {
     private double sale_price;
     private double buy_price;
     private int stock_minimo;
-    private Long status;
 
+    @ManyToOne
+    @JoinColumn(name = "status_id")
+    private Status status;
 
 
 }
