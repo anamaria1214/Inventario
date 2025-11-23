@@ -7,7 +7,6 @@ import co.inventario.services.interfaces.MovementService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "localhost",  allowCredentials = "true")
 @RestController
 @RequestMapping("/api/movement")
 public class MovementController {
