@@ -13,11 +13,12 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "http://localhost:4200",  // Angular default
                         "http://localhost:3000",  // React default
-                        "http://127.0.0.1:4200"   // Alternativa localhost
+                        "http://127.0.0.1:4200",   // Alternativa localhost
+                        "http://127.0.0.1:8080"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600); // 1 hora
+                .exposedHeaders("Authorization", "Content-Type")
+                .allowCredentials(true);
     }
 }

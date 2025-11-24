@@ -7,6 +7,8 @@ import co.inventario.services.interfaces.MovementService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/movement")
 public class MovementController {
@@ -18,10 +20,16 @@ public class MovementController {
         this.movementService = movementService;
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<MensajeDTO<Movement>> movement(@RequestBody NewMovementDTO newMovementDTO){
         Movement mov= movementService.newMovement(newMovementDTO);
         return ResponseEntity.ok(new MensajeDTO<>(false,mov));
+    }
+
+    @GetMapping("/getAll")
+    public ResponseEntity<MensajeDTO<List<Movement>>> getAllMovements(){
+        List<Movement> movs= movementService.getAllMovements();
+        return ResponseEntity.ok(new MensajeDTO<>(false,movs));
     }
 
 

@@ -53,4 +53,10 @@ public class ProductController {
         return ResponseEntity.ok(new MensajeDTO<>(false,pros));
     }
 
+    @GetMapping("/getById/{idProduct}")
+    public ResponseEntity<MensajeDTO<Product>> getProductById(@PathVariable long idProduct) throws ProductException{
+        Product product=productService.getProducById(idProduct);
+        return ResponseEntity.ok(new MensajeDTO<>(false,product));
+    }
+
 }
