@@ -120,6 +120,12 @@ public class ProductServiceImplementation implements ProductService {
         return productRepository.findByStatus(status);
     }
 
+    @Override
+    public Product getProducById(long idProduct) throws ProductException {
+        return getProductById(idProduct);
+    }
+
+
     //----------------Private methods---------------------
     private Status getStatus(String status) throws StatusException {
         return statusRepository.findByStatus(status).orElseThrow(() -> new StatusException("No se encontro el estado: " + status));

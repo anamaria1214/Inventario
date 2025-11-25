@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "localhost",  allowCredentials = "true")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -52,6 +51,12 @@ public class ProductController {
     public ResponseEntity<MensajeDTO<List<Product>>> getProductsByStatus(@PathVariable String statusName) throws StatusException{
         List<Product> pros=productService.getProductsByStatus(statusName);
         return ResponseEntity.ok(new MensajeDTO<>(false,pros));
+    }
+
+    @GetMapping("/getById/{idProduct}")
+    public ResponseEntity<MensajeDTO<Product>> getProductById(@PathVariable long idProduct) throws ProductException{
+        Product product=productService.getProducById(idProduct);
+        return ResponseEntity.ok(new MensajeDTO<>(false,product));
     }
 
 }

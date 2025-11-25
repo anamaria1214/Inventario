@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Transactional
@@ -72,4 +73,10 @@ public class MovementeServiceImplementation implements MovementService {
 
         return movementRepository.save(movement);
     }
+    @Override
+    public List<Movement> getAllMovements(){
+        return movementRepository.findAll();
+    }
+
+
 }

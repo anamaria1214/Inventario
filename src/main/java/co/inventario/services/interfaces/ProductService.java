@@ -19,4 +19,6 @@ public interface ProductService {
     List<Product> getAllProducts();
 
     List<Product> getProductsByStatus(String statusName) throws StatusException;
+
+    Product getProducById(long idProduct) throws ProductException;
 }
