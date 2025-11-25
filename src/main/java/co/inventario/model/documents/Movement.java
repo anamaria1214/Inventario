@@ -30,7 +30,7 @@ public class Movement {
     @JoinColumn(name = "type_move_id")
     private TypeMove typeMove;
 
-    private double amount;
+    private int amount;
 
 
 
