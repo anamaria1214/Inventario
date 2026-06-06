@@ -1,5 +1,6 @@
-# No subir credenciales de desarrollo
-application-dev.properties
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
