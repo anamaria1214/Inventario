@@ -6,16 +6,18 @@ import co.inventario.model.documents.Movement;
 import co.inventario.model.documents.Product;
 import co.inventario.repository.MovementRepository;
 import co.inventario.repository.ProductRepository;
+import co.inventario.services.export.ReportData;
+import co.inventario.services.export.ReportExporterFactory;
 import co.inventario.services.interfaces.ReportService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -27,15 +29,11 @@ public class ReportServiceImplementation implements ReportService {
 
     @Override
     public Product articuloMasVendido() {
-
         List<Product> productos = productRepository.findAll();
         Map<Product, Integer> productosVentas = new HashMap<>();
-
         for (Product p : productos) {
-            int ventas = ventasPorProducto(p);
-            productosVentas.put(p, ventas);
+            productosVentas.put(p, ventasPorProducto(p));
         }
-
         return productosVentas.entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -44,47 +42,106 @@ public class ReportServiceImplementation implements ReportService {
 
     @Override
     public Double gananciasPorFecha(DatesRangeDTO datesRangeDTO) {
-        double ganancias= 0.0;
-        List<Movement> movimientos= movementRepository.findAll();
-        for(int i=0;i<movimientos.size();i++){
-            if(movimientos.get(i).getDate_move().isBefore(datesRangeDTO.next())
-                    && movimientos.get(i).getDate_move().isAfter(datesRangeDTO.prev())
-                    && movimientos.get(i).getTypeMove().getMove().equals("OUT"))
-            {
-                ganancias+=movimientos.get(i).getAmount()*movimientos.get(i).getProduct().getSale_price();
-            }
-        }
-        return ganancias;
+        return getMovimientosEnRango(datesRangeDTO).stream()
+                .filter(m -> m.getTypeMove().getMove().equals("OUT"))
+                .mapToDouble(m -> m.getAmount() * m.getProduct().getSale_price())
+                .sum();
     }
 
     @Override
     public List<ProductReportDTO> productosVendidosPorFecha(DatesRangeDTO datesRangeDTO) {
-        List<ProductReportDTO> productosVendidos= new ArrayList<>();
-        List<Movement> movimientos= movementRepository.findAll();
-
-        for(int i=0;i<movimientos.size();i++){
-            if(movimientos.get(i).getDate_move().isBefore(datesRangeDTO.next())
-                    && movimientos.get(i).getDate_move().isAfter(datesRangeDTO.prev()) && movimientos.get(i).getTypeMove().getMove().equals("OUT")){
-
-                Product product =movimientos.get(i).getProduct();
-                productosVendidos.add(
-                        new ProductReportDTO(movimientos.get(i).getDate_move(), product.getName(),
-                                movimientos.get(i).getAmount(), product.getSale_price(),
-                                product.getSale_price()*movimientos.get(i).getAmount()));
-            }
-
-        }
-        return productosVendidos;
+        return getMovimientosEnRango(datesRangeDTO).stream()
+                .filter(m -> m.getTypeMove().getMove().equals("OUT"))
+                .map(m -> new ProductReportDTO(m.getDate_move(), m.getProduct().getName(),
+                        m.getAmount(), m.getProduct().getSale_price(),
+                        m.getProduct().getSale_price() * m.getAmount()))
+                .collect(Collectors.toList());
     }
 
-    // Métodos privados
+    @Override
+    public byte[] generarReporteProductos(boolean includeInactive, String sortBy, String format) {
+        List<Product> productos = productRepository.findAll();
+        if (!includeInactive) {
+            productos = productos.stream()
+                    .filter(p -> p.getStatus() != null && "ACTIVO".equalsIgnoreCase(p.getStatus().getStatus()))
+                    .collect(Collectors.toList());
+        }
+        // Simplified sorting
+        productos.sort(Comparator.comparing(Product::getName));
+        
+        List<List<Object>> rows = productos.stream()
+                .map(p -> Arrays.asList((Object)p.getName(), p.getStock(), p.getSale_price()))
+                .collect(Collectors.toList());
+        
+        ReportData data = new ReportData("Reporte de Productos", Arrays.asList("Nombre", "Stock", "Precio"), rows);
+        return exportar(data, format);
+    }
+
+    @Override
+    public byte[] generarReporteMovimientos(LocalDate dateFrom, LocalDate dateTo, String movementType, String format) {
+        List<Movement> movimientos = movementRepository.findAll().stream()
+                .filter(m -> m.getDate_move().toLocalDate().isAfter(dateFrom.minusDays(1)) && m.getDate_move().toLocalDate().isBefore(dateTo.plusDays(1)))
+                .filter(m -> "all".equalsIgnoreCase(movementType) || m.getTypeMove().getMove().equalsIgnoreCase(movementType))
+                .collect(Collectors.toList());
+
+        List<List<Object>> rows = movimientos.stream()
+                .map(m -> Arrays.asList((Object)m.getDate_move().toLocalDate(), m.getProduct().getName(), m.getTypeMove().getMove(), m.getAmount()))
+                .collect(Collectors.toList());
+        
+        ReportData data = new ReportData("Reporte de Movimientos", Arrays.asList("Fecha", "Producto", "Tipo", "Cantidad"), rows);
+        return exportar(data, format);
+    }
+
+    @Override
+    public byte[] generarReporteVentas(LocalDate dateFrom, LocalDate dateTo, boolean includeMetrics, String format) {
+        DatesRangeDTO range = new DatesRangeDTO(dateFrom.atStartOfDay(), dateTo.plusDays(1).atStartOfDay());
+        List<ProductReportDTO> ventas = productosVendidosPorFecha(range);
+
+        List<List<Object>> rows = ventas.stream()
+                .map(v -> Arrays.asList((Object)v.buyDate().toLocalDate(), v.name(), v.amount(), v.precioTotal()))
+                .collect(Collectors.toList());
+        
+        Map<String, Object> metrics = new HashMap<>();
+        if (includeMetrics) {
+            metrics.put("Ganancias Totales", gananciasPorFecha(range));
+        }
+
+        ReportData data = new ReportData("Reporte de Ventas", Arrays.asList("Fecha", "Producto", "Cantidad", "Total"), rows, metrics);
+        return exportar(data, format);
+    }
+
+    @Override
+    public byte[] generarReporteStockBajo(String threshold, String format) {
+        int limit = "default".equalsIgnoreCase(threshold) ? 5 : Integer.parseInt(threshold);
+        List<Product> productos = productRepository.findAll().stream()
+                .filter(p -> p.getStock() < limit)
+                .collect(Collectors.toList());
+        
+        List<List<Object>> rows = productos.stream()
+                .map(p -> Arrays.asList((Object)p.getName(), p.getStock(), p.getStock_minimo()))
+                .collect(Collectors.toList());
+        
+        ReportData data = new ReportData("Reporte de Stock Bajo", Arrays.asList("Producto", "Stock Actual", "Stock Mínimo"), rows);
+        return exportar(data, format);
+    }
+
+    // Privados
+
+    private byte[] exportar(ReportData data, String format) {
+        try {
+            return ReportExporterFactory.getExporter(format).export(data);
+        } catch (IOException e) {
+            throw new RuntimeException("Error exportando reporte", e);
+        }
+    }
+
+    private List<Movement> getMovimientosEnRango(DatesRangeDTO range) {
+        return movementRepository.findAll().stream()
+                .filter(m -> m.getDate_move().isAfter(range.prev()) && m.getDate_move().isBefore(range.next()))
+                .collect(Collectors.toList());
+    }
 
     private int ventasPorProducto(Product producto){
-        List<Movement> movimientos= movementRepository.findByProduct(producto);
-        int amount= 0;
-        for (int i =0; i<movimientos.size(); i++){
-            amount+=movimientos.get(i).getAmount();
-        }
-        return amount;
+        return movementRepository.findByProduct(producto).stream().mapToInt(m -> (int)m.getAmount()).sum();
     }
 }
